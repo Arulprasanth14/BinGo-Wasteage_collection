@@ -78,10 +78,3 @@ CREATE TABLE status_logs (
         REFERENCES pickups(pickup_id)
         ON DELETE CASCADE
 );
-echo "# BinGo-Wasteage_collection" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/Arulprasanth14/BinGo-Wasteage_collection.git
-git push -u origin main
