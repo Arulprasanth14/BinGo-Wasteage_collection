@@ -3,6 +3,7 @@ from auth import router as auth_router # Import your auth router
 from database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 from location import router as location_router
+from pickup import router as pickup_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,3 +20,4 @@ app.add_middleware(
 # ADD THIS LINE:
 app.include_router(auth_router) 
 app.include_router(location_router, tags=["Location"])
+app.include_router(pickup_router)

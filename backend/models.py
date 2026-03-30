@@ -11,3 +11,13 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), default="user")
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+class Pickup(Base):
+    __tablename__ = "pickups"
+
+    pickup_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    waste_type = Column(String(50), nullable=False)
+    location_text = Column(String(255))
+    status = Column(String(20), default="PENDING")
+    created_at = Column(TIMESTAMP, server_default=func.now())

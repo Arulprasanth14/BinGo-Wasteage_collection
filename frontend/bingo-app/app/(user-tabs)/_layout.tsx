@@ -1,16 +1,29 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
-export default function UserTabsLayout() {
+import { HapticTab } from '@/components/haptic-tab';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+
+export default function TabLayout() {
+  const colorScheme = useColorScheme() ?? 'light';
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#1E6F43',
+        tabBarButton: HapticTab,
+        tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarInactiveTintColor: '#8e8e93',
         tabBarStyle: {
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 8,
+          backgroundColor: Colors[colorScheme].background,
+          borderTopColor: '#e0e0e0',
+          height: 60,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          marginBottom: 4,
         },
       }}
     >
@@ -23,17 +36,6 @@ export default function UserTabsLayout() {
           ),
         }}
       />
-
-      <Tabs.Screen
-        name="track"
-        options={{
-          title: 'Track',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="navigate" size={size} color={color} />
-          ),
-        }}
-      />
-
       <Tabs.Screen
         name="history"
         options={{
@@ -43,13 +45,12 @@ export default function UserTabsLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
-        name="profile"
+        name="pickup"
         options={{
-          title: 'Profile',
+          title: 'Pickup',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="car" size={size} color={color} />
           ),
         }}
       />

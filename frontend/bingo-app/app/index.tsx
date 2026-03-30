@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import {
   View,
@@ -5,39 +6,77 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
   const router = useRouter();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const BACKEND_URL = "http://10.10.49.127:8000";
 
   const handleLogin = async () => {
-    const res = await fetch('http://10.10.49.113:8000/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-  
-    if (!res.ok) {
-      alert('Invalid credentials');
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter email and password");
       return;
     }
-  
-    const data = await res.json();
-  
-    if (data.role === 'USER') router.replace('/(user-tabs)' as any);
-    if (data.role === 'WORKER') router.replace('/(worker-tabs)' as any);
-    if (data.role === 'ADMIN') router.replace('/(admin)/dashboard' as any);
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      // ✅ safer parsing (prevents crash)
+      const text = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: text };
+      }
+
+      if (!res.ok) {
+        Alert.alert("Login Failed", data.detail || "Invalid credentials");
+        return;
+      }
+
+      // ✅ SAVE TOKEN FIRST
+      await AsyncStorage.setItem("token", data.token);
+
+      console.log("Token saved:", data.token);
+
+      // ✅ Navigate AFTER storing token
+      if (data.role === 'USER') {
+        router.replace('/(user-tabs)' as any);
+      } else if (data.role === 'WORKER') {
+        router.replace('/(worker-tabs)' as any);
+      } else if (data.role === 'ADMIN') {
+        router.replace('/(admin)/dashboard' as any);
+      } else {
+        Alert.alert("Error", "Unknown user role");
+      }
+
+    } catch (error) {
+      console.error("Login error:", error);
+      Alert.alert("Network Error", "Cannot connect to backend");
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  
-  
 
   return (
     <View style={styles.root}>
-      {/* Decorative Background Layers */}
+      {/* Background Shapes */}
       <View style={styles.curveTop} />
       <View style={styles.curveMiddle} />
       <View style={styles.curveBottom} />
@@ -72,8 +111,13 @@ export default function LoginScreen() {
             style={styles.button}
             activeOpacity={0.85}
             onPress={handleLogin}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>Login</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Login</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/register' as any)}>
@@ -94,8 +138,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EAF7F1',
   },
-
-  /* ---- BACKGROUND SHAPES ---- */
 
   curveTop: {
     position: 'absolute',
@@ -130,8 +172,6 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
 
-  /* ---- CONTENT ---- */
-
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -143,7 +183,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1E6F43',
     textAlign: 'center',
-    letterSpacing: 0.5,
   },
 
   subtitle: {
@@ -157,9 +196,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.96)',
     borderRadius: 20,
     padding: 22,
-    marginBottom: 20,
-
-    /* Shadow (iOS + Android) */
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 14,
@@ -191,8 +227,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 12,
     alignItems: 'center',
-
-    /* Subtle depth */
     shadowColor: '#1E6F43',
     shadowOpacity: 0.35,
     shadowRadius: 10,
@@ -204,7 +238,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 16,
-    letterSpacing: 0.5,
   },
 
   footer: {
