@@ -19,6 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { API_BASE_URL as BACKEND_URL } from '../../config/api';
 
 const { width } = Dimensions.get('window');
 
@@ -32,11 +34,6 @@ interface LocationResult {
 }
 
 // --- CONFIGURATION ---
-const getBackendUrl = () => {
-  return 'http://10.10.49.127:8000';
-};
-
-const BACKEND_URL = getBackendUrl();
 
 const WASTE_TYPES = [
   { id: 1, label: 'Organic Waste', emoji: '🍂', color: '#4CAF50' },
@@ -72,25 +69,23 @@ const Header: React.FC<{ userName: string }> = ({ userName }) => (
     end={{ x: 1, y: 1 }}
     style={styles.headerGradient}
   >
-    <SafeAreaView>
-      <View style={styles.headerContent}>
-        <View style={styles.headerTop}>
-          <View style={styles.logoBox}>
-            <Text style={styles.leafEmoji}>🌱</Text>
-          </View>
-          <Text style={styles.appName}>BinGo</Text>
-          <View style={{ flex: 1 }} />
-          <View style={styles.headerBadge}>
-            <Text style={styles.headerBadgeText}>Eco</Text>
-          </View>
+    <View style={[styles.headerContent, Platform.OS === 'android' && { paddingTop: (StatusBar.currentHeight ?? 24) + 12 }]}>
+      <View style={styles.headerTop}>
+        <View style={styles.logoBox}>
+          <Text style={styles.leafEmoji}>🌱</Text>
         </View>
-        <View style={styles.greetingContainer}>
-          <Text style={styles.greetingLabel}>Welcome back,</Text>
-          <Text style={styles.greetingName}>{userName} 👋</Text>
-          <Text style={styles.greetingSubtext}>Ready to schedule a pickup?</Text>
+        <Text style={styles.appName}>BinGo</Text>
+        <View style={{ flex: 1 }} />
+        <View style={styles.headerBadge}>
+          <Text style={styles.headerBadgeText}>Eco</Text>
         </View>
       </View>
-    </SafeAreaView>
+      <View style={styles.greetingContainer}>
+        <Text style={styles.greetingLabel}>Welcome back,</Text>
+        <Text style={styles.greetingName}>{userName} 👋</Text>
+        <Text style={styles.greetingSubtext}>Ready to schedule a pickup?</Text>
+      </View>
+    </View>
   </LinearGradient>
 );
 
@@ -401,6 +396,15 @@ interface MapPreviewProps {
 
 const MapPreview: React.FC<MapPreviewProps> = ({ location }) => {
   if (!location) return null;
+  // react-native-maps renders as a stub on web (metro.config.js handles it)
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[styles.mapPreviewContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#6B7280', fontSize: 14 }}>📍 {location.name}</Text>
+        <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 4 }}>Map preview not available on web</Text>
+      </View>
+    );
+  }
 
   const region = {
     latitude: parseFloat(location.latitude),
@@ -576,7 +580,8 @@ const rankLocations = (items: LocationResult[], query: string): LocationResult[]
 
 // --- MAIN SCREEN ---
 export default function BinGoHome() {
-  const userName = 'User';
+  const router = useRouter();
+  const [userName, setUserName] = useState('User');
   const [mapPickerVisible, setMapPickerVisible] = useState(false);
   const [mapRegion, setMapRegion] = useState<any>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
@@ -615,6 +620,13 @@ export default function BinGoHome() {
 
     return () => clearTimeout(timeout);
   }, [searchQuery]);
+
+  // Load userName from storage
+  useEffect(() => {
+    AsyncStorage.getItem('userName').then((name) => {
+      if (name) setUserName(name);
+    });
+  }, []);
 
   const handleUseMyLocation = async () => {
     setIsLoadingLocation(true);
@@ -669,6 +681,8 @@ export default function BinGoHome() {
       const payload = {
         waste_type: selectedWasteTypes.join(','),
         location_text: selectedLocation.address,
+        latitude: selectedLocation.latitude ? parseFloat(selectedLocation.latitude) : null,
+        longitude: selectedLocation.longitude ? parseFloat(selectedLocation.longitude) : null,
       };
       const res = await fetch(`${BACKEND_URL}/pickup/create`, {
         method: 'POST',
@@ -681,9 +695,15 @@ export default function BinGoHome() {
       const data = await res.json();
       if (res.ok) {
         setPickupStatus('pending');
-        Alert.alert('✅ Success', 'Your pickup has been scheduled!');
+        Alert.alert(
+          '✅ Pickup Scheduled!',
+          'Your request has been received. Tap OK to track your pickup.',
+          [{ text: 'OK', onPress: () => router.push('/(user-tabs)/pickup' as any) }]
+        );
         setSelectedWasteTypes([]);
         setNotes('');
+        setSelectedLocation(null);
+        setSearchQuery('');
       } else {
         Alert.alert('Error', data.detail || 'Pickup request failed.');
       }
@@ -701,7 +721,7 @@ export default function BinGoHome() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primaryDark} />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primaryDark} translucent={false} />
 
       <ScrollView
         style={styles.scrollView}
@@ -860,7 +880,7 @@ export default function BinGoHome() {
             <MapView
               style={{ flex: 1 }}
               region={mapRegion}
-              onRegionChangeComplete={(region) => {
+              onRegionChangeComplete={(region: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number }) => {
                 setMapRegion(region);
                 setSelectedLocation({
                   id: 'custom',
@@ -919,7 +939,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 8,
   },
   headerTop: {

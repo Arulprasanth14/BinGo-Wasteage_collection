@@ -14,7 +14,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarActiveTintColor: '#1E6F43',
         tabBarInactiveTintColor: '#8e8e93',
         tabBarStyle: {
           backgroundColor: Colors[colorScheme].background,
@@ -37,6 +37,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="pickup"
+        options={{
+          title: 'Track',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="navigate" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: 'History',
@@ -46,14 +55,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="pickup"
+        name="profile"
         options={{
-          title: 'Pickup',
+          title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="car" size={size} color={color} />
+            <Ionicons name="person-circle-outline" size={size} color={color} />
           ),
         }}
       />
+      {/* Hidden routes – not shown in tab bar */}
+      <Tabs.Screen name="track" options={{ href: null }} />
     </Tabs>
   );
 }

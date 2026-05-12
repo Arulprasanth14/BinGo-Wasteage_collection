@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, TIMESTAMP
+from sqlalchemy import Column, Integer, String, TIMESTAMP, Numeric, Text, Float
 from sqlalchemy.sql import func
 from database import Base
 
@@ -19,5 +19,27 @@ class Pickup(Base):
     user_id = Column(Integer, nullable=False)
     waste_type = Column(String(50), nullable=False)
     location_text = Column(String(255))
+    latitude = Column(Numeric(10, 7), nullable=True)
+    longitude = Column(Numeric(10, 7), nullable=True)
     status = Column(String(20), default="PENDING")
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+
+    feedback_id = Column(Integer, primary_key=True, index=True)
+    pickup_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    rating = Column(Integer, nullable=False)  # 1-5
+    comment = Column(Text, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+class WorkerLocation(Base):
+    __tablename__ = "worker_locations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    pickup_id = Column(Integer, nullable=False)
+    worker_user_id = Column(Integer, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())

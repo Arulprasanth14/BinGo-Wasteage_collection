@@ -7,8 +7,10 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { API_BASE_URL } from '../config/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -19,8 +21,16 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   
   const handleRegister = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
     try {
-      const res = await fetch('http://10.28.16.134:8000/register', {
+      const res = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
@@ -29,15 +39,15 @@ export default function RegisterScreen() {
       const data = await res.json(); // SAFE now
   
       if (!res.ok) {
-        alert(data.detail || 'Registration failed');
+        Alert.alert('Error', data.detail || 'Registration failed');
         return;
       }
   
-      alert(data.message); // "Registration successful"
+      Alert.alert('Success', data.message || 'Registration successful');
       router.replace('/'); // login screen
     } catch (error) {
       console.error(error);
-      alert('Backend not reachable');
+      Alert.alert('Error', 'Backend not reachable. Check your network.');
     }
   };
   
@@ -76,6 +86,7 @@ export default function RegisterScreen() {
           <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
+            placeholder="Enter your password"
             secureTextEntry
             value={password}
             onChangeText={setPassword}

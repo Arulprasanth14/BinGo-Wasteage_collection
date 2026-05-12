@@ -63,12 +63,13 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = jwt.encode(
-        {"user_id": user.user_id, "role": user.role},
+        {"user_id": user.user_id, "role": user.role, "name": user.name},
         SECRET_KEY,
         algorithm=ALGORITHM
     )
 
     return {
         "token": token,
-        "role": user.role
+        "role": user.role,
+        "name": user.name,
     }
