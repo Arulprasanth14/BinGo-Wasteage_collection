@@ -18,6 +18,8 @@ DB_NAME = os.getenv("DB_NAME", "bingo_db")
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
+print("🔍 DATABASE_URL being used:", DATABASE_URL)
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
